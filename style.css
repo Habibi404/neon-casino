@@ -1,0 +1,485 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Arial, Helvetica, sans-serif;
+    background: radial-gradient(circle at top, #16362e 0%, #091411 35%, #050708 75%);
+    color: white;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    font-weight: 800;
+    transition: 0.2s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.12);
+}
+
+.hidden {
+    display: none !important;
+}
+
+.screen {
+    min-height: 100vh;
+}
+
+/* LOGO */
+
+.logo {
+    color: #f0c75e;
+    font-size: 21px;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+/* EKRAN STARTOWY */
+
+#start-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 25px;
+}
+
+#start-screen > .logo {
+    margin-bottom: 30px;
+    font-size: 27px;
+}
+
+.start-box {
+    width: 100%;
+    max-width: 520px;
+    padding: 45px 35px;
+    text-align: center;
+    background: rgba(11, 18, 20, 0.96);
+    border: 1px solid #34483f;
+    border-radius: 24px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.65);
+}
+
+.start-box h1 {
+    margin-top: 0;
+    font-size: 38px;
+}
+
+.subtitle {
+    color: #a9b6b1;
+    margin-bottom: 25px;
+}
+
+input {
+    width: 100%;
+    padding: 15px 16px;
+    margin: 8px 0;
+    color: white;
+    background: #09110f;
+    border: 1px solid #3b5048;
+    border-radius: 12px;
+    outline: none;
+}
+
+input:focus {
+    border-color: #e8c45d;
+}
+
+#continue-btn,
+#create-room-btn,
+#join-room-btn {
+    width: 100%;
+    padding: 15px;
+    margin-top: 10px;
+    color: #17130a;
+    background: linear-gradient(135deg, #f5d878, #c99c31);
+    border-radius: 12px;
+}
+
+/* GÓRNY PASEK */
+
+header {
+    min-height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 15px 4vw;
+    background: rgba(5, 9, 10, 0.92);
+    border-bottom: 1px solid #263a33;
+}
+
+/* LOBBY */
+
+.lobby-container {
+    max-width: 950px;
+    margin: 80px auto 20px;
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    align-items: center;
+    padding: 20px;
+}
+
+.panel,
+.side-panel {
+    background: rgba(11, 18, 20, 0.96);
+    border: 1px solid #30463d;
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+}
+
+.panel {
+    min-height: 250px;
+}
+
+.panel h2,
+.side-panel h2 {
+    color: #f1d172;
+}
+
+.or {
+    text-align: center;
+    color: #71827b;
+    font-weight: bold;
+}
+
+/* UKŁAD GRY */
+
+.game-layout {
+    max-width: 1500px;
+    margin: auto;
+    display: grid;
+    grid-template-columns: 260px 1fr 260px;
+    gap: 20px;
+    padding: 24px;
+}
+
+.side-panel {
+    min-width: 0;
+}
+
+.side-panel hr {
+    border: 0;
+    border-top: 1px solid #2c4038;
+    margin: 25px 0;
+}
+
+.casino-area {
+    min-width: 0;
+}
+
+/* STÓŁ */
+
+.casino-table {
+    min-height: 570px;
+    padding: 45px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+
+    background: radial-gradient(
+        ellipse at center,
+        #167052 0%,
+        #0d563f 50%,
+        #08392c 100%
+    );
+
+    border: 14px solid #4b3020;
+    border-radius: 42%;
+
+    box-shadow:
+        inset 0 0 80px rgba(0, 0, 0, 0.65),
+        0 25px 60px rgba(0, 0, 0, 0.6);
+}
+
+.table-logo {
+    font-size: 28px;
+    letter-spacing: 12px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* PULA */
+
+.pot-area {
+    text-align: center;
+}
+
+.pot-title {
+    color: #f0cf6d;
+    font-weight: 900;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+}
+
+#pot {
+    min-height: 130px;
+    min-width: 300px;
+    max-width: 550px;
+    padding: 15px;
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+
+    border: 2px dashed rgba(240, 207, 109, 0.55);
+    border-radius: 18px;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.empty-pot {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+/* ŻETONY */
+
+.betting-area {
+    text-align: center;
+}
+
+.bet-label {
+    margin-bottom: 12px;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+
+.chip {
+    width: 62px;
+    height: 62px;
+    padding: 0;
+
+    color: #151009;
+    background: #e5bd4e;
+
+    border: 6px dashed rgba(255, 255, 255, 0.75);
+    border-radius: 50%;
+
+    box-shadow:
+        0 5px 15px rgba(0, 0, 0, 0.45),
+        inset 0 0 0 3px rgba(0, 0, 0, 0.15);
+}
+
+/* POSTAWIONE PRZEDMIOTY */
+
+.bet-item {
+    padding: 9px 12px;
+    background: rgba(8, 15, 13, 0.92);
+    border: 1px solid #e3c25f;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.35);
+}
+
+.bet-owner {
+    color: #9caaa5;
+    font-size: 11px;
+}
+
+/* GRACZE */
+
+.player-card {
+    padding: 12px;
+    margin: 8px 0;
+    background: #101b17;
+    border: 1px solid #2d443a;
+    border-radius: 11px;
+}
+
+.online-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    margin-right: 7px;
+    background: #56e083;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #56e083;
+}
+
+/* EKWIPUNEK */
+
+.inventory-item {
+    padding: 12px;
+    margin: 9px 0;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 8px;
+
+    background: #101b17;
+    border: 1px solid #31473e;
+    border-radius: 11px;
+}
+
+.inventory-item button {
+    padding: 7px 9px;
+    color: #17130a;
+    background: #e6c35c;
+    border-radius: 8px;
+}
+
+/* ITEM SHOP */
+
+.balance {
+    padding: 13px;
+    text-align: center;
+    font-size: 22px;
+    background: #101b17;
+    border-radius: 11px;
+}
+
+.shop-item {
+    margin: 10px 0;
+    padding: 12px;
+
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    gap: 5px;
+
+    background: #101b17;
+    border: 1px solid #30463d;
+    border-radius: 11px;
+}
+
+.shop-icon {
+    grid-row: span 2;
+    display: flex;
+    align-items: center;
+    font-size: 27px;
+}
+
+.shop-item span {
+    color: #b9c5c0;
+    font-size: 13px;
+}
+
+.buy-item {
+    grid-column: span 2;
+    margin-top: 7px;
+    padding: 8px;
+    color: #17130a;
+    background: #e5bd4e;
+    border-radius: 8px;
+}
+
+/* PRZYCISKI */
+
+.dark-button {
+    width: 100%;
+    padding: 12px;
+    color: white;
+    background: #182720;
+    border: 1px solid #344a40;
+    border-radius: 10px;
+}
+
+.small-button {
+    margin-left: 8px;
+    padding: 7px 10px;
+    color: #17130a;
+    background: #e5bd4e;
+    border-radius: 8px;
+}
+
+.game-buttons {
+    max-width: 350px;
+    margin: 18px auto;
+}
+
+.status {
+    min-height: 25px;
+    text-align: center;
+    color: #d5c279;
+}
+
+/* TELEFONY */
+
+@media (max-width: 1000px) {
+
+    .game-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .casino-area {
+        order: -1;
+    }
+
+    .casino-table {
+        min-height: 500px;
+        border-radius: 80px;
+    }
+
+    .lobby-container {
+        grid-template-columns: 1fr;
+        margin-top: 30px;
+        gap: 20px;
+    }
+
+    .or {
+        padding: 5px;
+    }
+}
+
+@media (max-width: 600px) {
+
+    header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .game-layout {
+        padding: 10px;
+    }
+
+    .casino-table {
+        min-height: 430px;
+        padding: 25px 12px;
+        border-width: 9px;
+        border-radius: 55px;
+    }
+
+    #pot {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .start-box {
+        padding: 30px 20px;
+    }
+
+    .start-box h1 {
+        font-size: 30px;
+    }
+
+    .chip {
+        width: 54px;
+        height: 54px;
+    }
+
+    .room-info {
+        font-size: 14px;
+    }
+}
