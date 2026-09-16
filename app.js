@@ -1,6 +1,7 @@
 // ==========================================
-// NEON CASINO - MULTIPLAYER P2P
-// Wszystkie itemy są wyłącznie wirtualne.
+// NEON CASINO - MULTIPLAYER
+// Wersja 2
+// Przedmioty i żetony są wyłącznie wirtualne.
 // ==========================================
 
 let nickname = "";
@@ -12,7 +13,6 @@ let roomCode = "";
 
 let balance = 10000;
 let inventory = [];
-
 let players = {};
 let pot = [];
 
@@ -41,18 +41,15 @@ const copyRoomBtn = document.getElementById("copy-room-btn");
 const playersList = document.getElementById("players-list");
 const inventoryBox = document.getElementById("inventory");
 const potBox = document.getElementById("pot");
-
 const balanceDisplay = document.getElementById("balance");
-
 const gameStatus = document.getElementById("game-status");
 
 
 // ==========================================
-// POMOCNICZE
+// PODSTAWOWE FUNKCJE
 // ==========================================
 
 function showScreen(screen) {
-
     startScreen.classList.add("hidden");
     lobbyScreen.classList.add("hidden");
     gameScreen.classList.add("hidden");
@@ -61,8 +58,12 @@ function showScreen(screen) {
 }
 
 
-function randomCode() {
+function setStatus(text) {
+    gameStatus.textContent = text;
+}
 
+
+function randomCode() {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
     let result = "";
@@ -77,8 +78,15 @@ function randomCode() {
 }
 
 
-function safeText(text) {
+function makeID() {
+    return (
+        Date.now().toString(36) +
+        Math.random().toString(36).substring(2, 9)
+    );
+}
 
+
+function safeText(text) {
     return String(text)
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
@@ -88,21 +96,16 @@ function safeText(text) {
 }
 
 
-function setStatus(text) {
-    gameStatus.textContent = text;
-}
-
-
 // ==========================================
-// START
+// NICK
 // ==========================================
 
-continueBtn.addEventListener("click", () => {
+continueBtn.addEventListener("click", function () {
 
     const value = nicknameInput.value.trim();
 
     if (!value) {
-        alert("Wpisz nick.");
+        alert("Wpisz swój nick.");
         return;
     }
 
@@ -114,8 +117,7 @@ continueBtn.addEventListener("click", () => {
 });
 
 
-nicknameInput.addEventListener("keydown", (event) => {
-
+nicknameInput.addEventListener("keydown", function (event) {
     if (event.key === "Enter") {
         continueBtn.click();
     }
@@ -126,22 +128,33 @@ nicknameInput.addEventListener("keydown", (event) => {
 // TWORZENIE POKOJU
 // ==========================================
 
-createRoomBtn.addEventListener("click", () => {
+createRoomBtn.addEventListener("click", function () {
+
+    if (typeof Peer === "undefined") {
+        alert("Nie udało się załadować PeerJS.");
+        return;
+    }
+
+    createRoomBtn.disabled = true;
 
     lobbyStatus.textContent = "Tworzenie pokoju...";
 
     isHost = true;
-
     roomCode = randomCode();
 
-    const peerID =
-        "neon-casino-" +
-        roomCode.toLowerCase();
+    const hostID =
+        "neon-casino-" + roomCode.toLowerCase();
 
-    peer = new Peer(peerID);
+    console.log("Tworzenie hosta:", hostID);
+
+    peer = new Peer(hostID, {
+        debug: 2
+    });
 
 
-    peer.on("open", () => {
+    peer.on("open", function (id) {
+
+        console.log("HOST PEER OPEN:", id);
 
         players = {};
 
@@ -152,22 +165,28 @@ createRoomBtn.addEventListener("click", () => {
         openGame();
 
         setStatus(
-            "Pokój gotowy. Wyślij kod znajomemu."
+            "Pokój działa. Wyślij kod znajomemu: " +
+            roomCode
         );
     });
 
 
-    peer.on("connection", (conn) => {
+    peer.on("connection", function (conn) {
 
-        // Na początek obsługujemy 2 graczy.
+        console.log(
+            "Próba połączenia od:",
+            conn.peer
+        );
+
         if (connection && connection.open) {
 
-            conn.on("open", () => {
+            conn.on("open", function () {
+
                 conn.send({
                     type: "room-full"
                 });
 
-                setTimeout(() => {
+                setTimeout(function () {
                     conn.close();
                 }, 500);
             });
@@ -181,21 +200,62 @@ createRoomBtn.addEventListener("click", () => {
     });
 
 
-    peer.on("error", (error) => {
+    peer.on("disconnected", function () {
 
-        console.error(error);
+        console.log("PeerJS disconnected");
 
-        lobbyStatus.textContent =
-            "Nie udało się utworzyć pokoju. Spróbuj ponownie.";
+        if (!peer.destroyed) {
+
+            setStatus(
+                "Utracono kontakt z serwerem pośredniczącym. Próba ponownego połączenia..."
+            );
+
+            try {
+                peer.reconnect();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    });
+
+
+    peer.on("error", function (error) {
+
+        console.error("PEER ERROR:", error);
+
+        const type =
+            error && error.type
+                ? error.type
+                : "unknown";
+
+        if (gameScreen.classList.contains("hidden")) {
+            lobbyStatus.textContent =
+                "Błąd PeerJS: " + type;
+        } else {
+            setStatus(
+                "Błąd PeerJS: " + type
+            );
+        }
+
+        alert(
+            "Błąd połączenia PeerJS: " + type
+        );
+
+        createRoomBtn.disabled = false;
     });
 });
 
 
 // ==========================================
-// DOŁĄCZANIE
+// DOŁĄCZANIE DO POKOJU
 // ==========================================
 
-joinRoomBtn.addEventListener("click", () => {
+joinRoomBtn.addEventListener("click", function () {
+
+    if (typeof Peer === "undefined") {
+        alert("Nie udało się załadować PeerJS.");
+        return;
+    }
 
     const code =
         roomCodeInput.value
@@ -203,57 +263,147 @@ joinRoomBtn.addEventListener("click", () => {
             .toUpperCase();
 
     if (!code) {
-
         lobbyStatus.textContent =
             "Wpisz kod pokoju.";
-
         return;
     }
 
     roomCode = code;
-
     isHost = false;
+
+    joinRoomBtn.disabled = true;
 
     lobbyStatus.textContent =
         "Łączenie z pokojem...";
 
-    peer = new Peer();
+    console.log(
+        "Próba dołączenia do:",
+        roomCode
+    );
 
-
-    peer.on("open", () => {
-
-        const hostPeerID =
-            "neon-casino-" +
-            roomCode.toLowerCase();
-
-        connection =
-            peer.connect(hostPeerID, {
-                reliable: true
-            });
-
-        setupConnection();
+    peer = new Peer({
+        debug: 2
     });
 
 
-    peer.on("error", (error) => {
+    peer.on("open", function (myID) {
 
-        console.error(error);
+        console.log(
+            "GUEST PEER OPEN:",
+            myID
+        );
+
+        const hostID =
+            "neon-casino-" +
+            roomCode.toLowerCase();
+
+        console.log(
+            "Łączenie z hostem:",
+            hostID
+        );
+
+        connection = peer.connect(
+            hostID,
+            {
+                reliable: true,
+                metadata: {
+                    nickname: nickname
+                }
+            }
+        );
+
+        setupConnection();
+
+
+        // Jeśli po 15 sekundach nadal brak połączenia
+        setTimeout(function () {
+
+            if (
+                connection &&
+                !connection.open
+            ) {
+
+                lobbyStatus.textContent =
+                    "Nie udało się połączyć z pokojem.";
+
+                joinRoomBtn.disabled = false;
+
+                alert(
+                    "Połączenie nie zostało nawiązane. Sprawdź kod pokoju i połączenie z internetem."
+                );
+            }
+
+        }, 15000);
+    });
+
+
+    peer.on("disconnected", function () {
+
+        console.log(
+            "Guest PeerJS disconnected"
+        );
+
+        if (!peer.destroyed) {
+
+            try {
+                peer.reconnect();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    });
+
+
+    peer.on("error", function (error) {
+
+        console.error(
+            "GUEST PEER ERROR:",
+            error
+        );
+
+        const type =
+            error && error.type
+                ? error.type
+                : "unknown";
 
         lobbyStatus.textContent =
-            "Błąd połączenia.";
+            "Błąd połączenia: " + type;
+
+        joinRoomBtn.disabled = false;
+
+        alert(
+            "Błąd PeerJS: " + type
+        );
     });
 });
 
 
 // ==========================================
-// POŁĄCZENIE
+// OBSŁUGA POŁĄCZENIA
 // ==========================================
 
 function setupConnection() {
 
-    connection.on("open", () => {
+    if (!connection) {
+        return;
+    }
 
-        if (!isHost) {
+
+    connection.on("open", function () {
+
+        console.log(
+            "DATA CONNECTION OPEN"
+        );
+
+
+        if (isHost) {
+
+            setStatus(
+                "Znajomy połączył się z pokojem."
+            );
+        }
+
+        else {
 
             connection.send({
                 type: "join",
@@ -263,63 +413,84 @@ function setupConnection() {
             openGame();
 
             setStatus(
-                "Połączono. Czekamy na synchronizację..."
-            );
-        }
-
-        else {
-
-            setStatus(
-                "Znajomy połączył się z pokojem."
+                "Połączono z pokojem!"
             );
         }
     });
 
 
-    connection.on("data", (data) => {
+    connection.on("data", function (data) {
+
+        console.log(
+            "ODEBRANO:",
+            data
+        );
 
         handleNetworkMessage(data);
     });
 
 
-    connection.on("close", () => {
+    connection.on("close", function () {
 
-        setStatus(
-            "Drugi gracz rozłączył się."
+        console.log(
+            "DATA CONNECTION CLOSED"
         );
 
         if (isHost) {
 
-            const hostPlayer = players[nickname];
+            setStatus(
+                "Drugi gracz rozłączył się."
+            );
+
+            const hostPlayer =
+                players[nickname];
 
             players = {};
 
             if (hostPlayer) {
-                players[nickname] = hostPlayer;
+                players[nickname] =
+                    hostPlayer;
             }
 
             connection = null;
 
-            broadcastState();
+            renderEverything();
         }
 
-        renderPlayers();
+        else {
+
+            setStatus(
+                "Połączenie z hostem zostało przerwane."
+            );
+        }
     });
 
 
-    connection.on("error", (error) => {
+    connection.on("error", function (error) {
 
-        console.error(error);
+        console.error(
+            "CONNECTION ERROR:",
+            error
+        );
+
+        const type =
+            error && error.type
+                ? error.type
+                : "unknown";
 
         setStatus(
-            "Wystąpił problem z połączeniem."
+            "Błąd połączenia: " + type
+        );
+
+        alert(
+            "Błąd połączenia: " + type
         );
     });
 }
 
 
 // ==========================================
-// WIADOMOŚCI MULTIPLAYER
+// WIADOMOŚCI SIECIOWE
 // ==========================================
 
 function handleNetworkMessage(data) {
@@ -329,73 +500,88 @@ function handleNetworkMessage(data) {
     }
 
 
-    // ----------------------------
-    // GRACZ DOŁĄCZA
-    // ----------------------------
+    // GRACZ DOŁĄCZYŁ
 
-    if (data.type === "join" && isHost) {
+    if (
+        data.type === "join" &&
+        isHost
+    ) {
 
         let guestName =
-            String(data.nickname || "Gracz")
-                .substring(0, 20);
+            String(
+                data.nickname || "Gracz"
+            ).substring(0, 20);
 
-        // Jeśli obaj wpisali ten sam nick,
-        // dodajemy oznaczenie.
+
         if (players[guestName]) {
             guestName += " (2)";
         }
 
+
         players[guestName] = {
             nickname: guestName
         };
+
 
         connection.send({
             type: "joined",
             nickname: guestName
         });
 
+
         broadcastState();
 
+        renderEverything();
+
         setStatus(
-            guestName + " dołączył do stołu."
+            guestName +
+            " dołączył do stołu!"
         );
     }
 
 
-    // ----------------------------
-    // SERWER/HOST ZMIENIŁ NICK GOŚCIA
-    // ----------------------------
+    // HOST POTWIERDZA NICK
 
-    if (data.type === "joined" && !isHost) {
+    if (
+        data.type === "joined" &&
+        !isHost
+    ) {
 
         nickname = data.nickname;
 
         setStatus(
-            "Dołączyłeś do pokoju."
+            "Dołączyłeś do pokoju!"
         );
     }
 
 
-    // ----------------------------
-    // PEŁNY STAN GRY
-    // ----------------------------
+    // SYNCHRONIZACJA
 
-    if (data.type === "state" && !isHost) {
+    if (
+        data.type === "state" &&
+        !isHost
+    ) {
 
-        players = data.players || {};
-        pot = data.pot || [];
+        players =
+            data.players || {};
+
+        pot =
+            data.pot || [];
 
         renderEverything();
     }
 
 
-    // ----------------------------
-    // GOŚĆ STAWIA ŻETONY
-    // ----------------------------
+    // ŻETONY GOŚCIA
 
-    if (data.type === "bet-chips" && isHost) {
+    if (
+        data.type === "bet-chips" &&
+        isHost
+    ) {
 
-        const value = Number(data.value);
+        const value =
+            Number(data.value);
+
 
         if (
             !Number.isFinite(value) ||
@@ -403,6 +589,7 @@ function handleNetworkMessage(data) {
         ) {
             return;
         }
+
 
         pot.push({
             id: makeID(),
@@ -413,22 +600,25 @@ function handleNetworkMessage(data) {
             value: value
         });
 
+
         broadcastState();
         renderEverything();
     }
 
 
-    // ----------------------------
-    // GOŚĆ STAWIA ITEM
-    // ----------------------------
+    // ITEM GOŚCIA
 
-    if (data.type === "bet-item" && isHost) {
+    if (
+        data.type === "bet-item" &&
+        isHost
+    ) {
 
         const item = data.item;
 
         if (!item) {
             return;
         }
+
 
         pot.push({
             id: makeID(),
@@ -439,29 +629,35 @@ function handleNetworkMessage(data) {
             value: Number(item.value) || 0
         });
 
+
         broadcastState();
         renderEverything();
     }
 
 
-    // ----------------------------
-    // GOŚĆ COFA SWOJE STAWKI
-    // ----------------------------
+    // COFNIĘCIE STAWKI GOŚCIA
 
-    if (data.type === "undo" && isHost) {
+    if (
+        data.type === "undo" &&
+        isHost
+    ) {
 
         pot = pot.filter(
-            bet => bet.owner !== data.nickname
+            function (bet) {
+                return (
+                    bet.owner !==
+                    data.nickname
+                );
+            }
         );
+
 
         broadcastState();
         renderEverything();
     }
 
 
-    // ----------------------------
     // POKÓJ PEŁNY
-    // ----------------------------
 
     if (data.type === "room-full") {
 
@@ -475,12 +671,13 @@ function handleNetworkMessage(data) {
 
 
 // ==========================================
-// OTWARCIE GRY
+// OTWIERANIE STOŁU
 // ==========================================
 
 function openGame() {
 
-    roomCodeDisplay.textContent = roomCode;
+    roomCodeDisplay.textContent =
+        roomCode;
 
     showScreen(gameScreen);
 
@@ -489,7 +686,7 @@ function openGame() {
 
 
 // ==========================================
-// SYNCHRONIZACJA HOST -> GOŚĆ
+// SYNCHRONIZACJA
 // ==========================================
 
 function broadcastState() {
@@ -502,6 +699,7 @@ function broadcastState() {
         return;
     }
 
+
     connection.send({
         type: "state",
         players: players,
@@ -511,16 +709,16 @@ function broadcastState() {
 
 
 // ==========================================
-// ŻETONY
+// STAWIANIE ŻETONÓW
 // ==========================================
 
 document
     .querySelectorAll(".chip")
-    .forEach(button => {
+    .forEach(function (button) {
 
         button.addEventListener(
             "click",
-            () => {
+            function () {
 
                 const value =
                     Number(
@@ -544,7 +742,9 @@ function placeChips(value) {
         return;
     }
 
+
     balance -= value;
+
 
     if (isHost) {
 
@@ -556,6 +756,7 @@ function placeChips(value) {
             name: value + " żetonów",
             value: value
         });
+
 
         broadcastState();
         renderEverything();
@@ -574,14 +775,18 @@ function placeChips(value) {
                 "Brak połączenia z hostem."
             );
 
+            renderBalance();
+
             return;
         }
+
 
         connection.send({
             type: "bet-chips",
             nickname: nickname,
             value: value
         });
+
 
         renderBalance();
     }
@@ -594,11 +799,11 @@ function placeChips(value) {
 
 document
     .querySelectorAll(".buy-item")
-    .forEach(button => {
+    .forEach(function (button) {
 
         button.addEventListener(
             "click",
-            () => {
+            function () {
 
                 const price =
                     Number(
@@ -611,6 +816,7 @@ document
                 const icon =
                     button.dataset.icon;
 
+
                 if (balance < price) {
 
                     setStatus(
@@ -620,7 +826,9 @@ document
                     return;
                 }
 
+
                 balance -= price;
+
 
                 inventory.push({
                     id: makeID(),
@@ -628,6 +836,7 @@ document
                     icon: icon,
                     value: price
                 });
+
 
                 renderEverything();
 
@@ -640,55 +849,64 @@ document
 
 
 // ==========================================
-// WŁASNY ITEM
+// WŁASNY WIRTUALNY ITEM
 // ==========================================
 
 document
     .getElementById("create-item-btn")
-    .addEventListener("click", () => {
+    .addEventListener(
+        "click",
+        function () {
 
-        const name =
-            prompt(
-                "Podaj nazwę WIRTUALNEGO itemu:"
+            const name =
+                prompt(
+                    "Podaj nazwę WIRTUALNEGO itemu:"
+                );
+
+
+            if (!name) {
+                return;
+            }
+
+
+            const valueText =
+                prompt(
+                    "Podaj jego wartość w wirtualnych żetonach:"
+                );
+
+
+            const value =
+                Number(valueText);
+
+
+            if (
+                !Number.isFinite(value) ||
+                value <= 0
+            ) {
+
+                alert(
+                    "Podaj prawidłową wartość."
+                );
+
+                return;
+            }
+
+
+            inventory.push({
+                id: makeID(),
+                name: name.substring(0, 30),
+                icon: "🎁",
+                value: Math.floor(value)
+            });
+
+
+            renderEverything();
+
+            setStatus(
+                "Dodano wirtualny item."
             );
-
-        if (!name) {
-            return;
         }
-
-        const valueText =
-            prompt(
-                "Podaj jego wartość w żetonach:"
-            );
-
-        const value =
-            Number(valueText);
-
-        if (
-            !Number.isFinite(value) ||
-            value <= 0
-        ) {
-
-            alert(
-                "Podaj prawidłową wartość."
-            );
-
-            return;
-        }
-
-        inventory.push({
-            id: makeID(),
-            name: name.substring(0, 30),
-            icon: "🎁",
-            value: Math.floor(value)
-        });
-
-        renderEverything();
-
-        setStatus(
-            "Dodano wirtualny item."
-        );
-    });
+    );
 
 
 // ==========================================
@@ -699,15 +917,20 @@ function betItem(itemID) {
 
     const index =
         inventory.findIndex(
-            item => item.id === itemID
+            function (item) {
+                return item.id === itemID;
+            }
         );
+
 
     if (index === -1) {
         return;
     }
 
+
     const item =
         inventory[index];
+
 
     inventory.splice(index, 1);
 
@@ -722,6 +945,7 @@ function betItem(itemID) {
             name: item.name,
             value: item.value
         });
+
 
         broadcastState();
         renderEverything();
@@ -740,8 +964,11 @@ function betItem(itemID) {
                 "Brak połączenia."
             );
 
+            renderEverything();
+
             return;
         }
+
 
         connection.send({
             type: "bet-item",
@@ -749,76 +976,98 @@ function betItem(itemID) {
             item: item
         });
 
+
         renderEverything();
     }
 }
 
 
 // ==========================================
-// COFANIE STAWKI
+// COFNIJ STAWKĘ
 // ==========================================
 
 document
     .getElementById("undo-bet-btn")
-    .addEventListener("click", () => {
+    .addEventListener(
+        "click",
+        function () {
 
-        if (isHost) {
+            if (isHost) {
 
-            restoreMyBets();
+                restoreMyBets();
 
-            broadcastState();
-            renderEverything();
-        }
+                broadcastState();
 
-        else {
-
-            restoreGuestBetsLocally();
-
-            if (
-                connection &&
-                connection.open
-            ) {
-
-                connection.send({
-                    type: "undo",
-                    nickname: nickname
-                });
+                renderEverything();
             }
 
-            renderEverything();
+            else {
+
+                restoreGuestBetsLocally();
+
+
+                if (
+                    connection &&
+                    connection.open
+                ) {
+
+                    connection.send({
+                        type: "undo",
+                        nickname: nickname
+                    });
+                }
+
+
+                renderEverything();
+            }
         }
-    });
+    );
 
 
 function restoreMyBets() {
 
     const myBets =
         pot.filter(
-            bet => bet.owner === nickname
+            function (bet) {
+                return (
+                    bet.owner ===
+                    nickname
+                );
+            }
         );
 
-    myBets.forEach(bet => {
 
-        if (bet.type === "chips") {
+    myBets.forEach(
+        function (bet) {
 
-            balance += bet.value;
+            if (
+                bet.type === "chips"
+            ) {
+
+                balance += bet.value;
+            }
+
+            else {
+
+                inventory.push({
+                    id: makeID(),
+                    name: bet.name,
+                    icon: bet.icon,
+                    value: bet.value
+                });
+            }
         }
+    );
 
-        else {
 
-            inventory.push({
-                id: makeID(),
-                name: bet.name,
-                icon: bet.icon,
-                value: bet.value
-            });
+    pot = pot.filter(
+        function (bet) {
+            return (
+                bet.owner !==
+                nickname
+            );
         }
-    });
-
-    pot =
-        pot.filter(
-            bet => bet.owner !== nickname
-        );
+    );
 }
 
 
@@ -826,31 +1075,41 @@ function restoreGuestBetsLocally() {
 
     const myBets =
         pot.filter(
-            bet => bet.owner === nickname
+            function (bet) {
+                return (
+                    bet.owner ===
+                    nickname
+                );
+            }
         );
 
-    myBets.forEach(bet => {
 
-        if (bet.type === "chips") {
+    myBets.forEach(
+        function (bet) {
 
-            balance += bet.value;
+            if (
+                bet.type === "chips"
+            ) {
+
+                balance += bet.value;
+            }
+
+            else {
+
+                inventory.push({
+                    id: makeID(),
+                    name: bet.name,
+                    icon: bet.icon,
+                    value: bet.value
+                });
+            }
         }
-
-        else {
-
-            inventory.push({
-                id: makeID(),
-                name: bet.name,
-                icon: bet.icon,
-                value: bet.value
-            });
-        }
-    });
+    );
 }
 
 
 // ==========================================
-// RENDEROWANIE
+// WYŚWIETLANIE
 // ==========================================
 
 function renderEverything() {
@@ -876,31 +1135,33 @@ function renderPlayers() {
     const names =
         Object.keys(players);
 
-    if (
-        !names.includes(nickname)
-    ) {
 
+    if (!names.includes(nickname)) {
         names.push(nickname);
     }
 
-    names.forEach(name => {
 
-        html += `
-            <div class="player-card">
+    names.forEach(
+        function (name) {
 
-                <span class="online-dot"></span>
+            html += `
+                <div class="player-card">
 
-                ${safeText(name)}
+                    <span class="online-dot"></span>
 
-                ${
-                    name === nickname
-                    ? "<small> (Ty)</small>"
-                    : ""
-                }
+                    ${safeText(name)}
 
-            </div>
-        `;
-    });
+                    ${
+                        name === nickname
+                            ? "<small> (Ty)</small>"
+                            : ""
+                    }
+
+                </div>
+            `;
+        }
+    );
+
 
     playersList.innerHTML = html;
 }
@@ -910,41 +1171,47 @@ function renderInventory() {
 
     if (inventory.length === 0) {
 
-        inventoryBox.innerHTML =
-            `<p style="color:#84948d">
+        inventoryBox.innerHTML = `
+            <p style="color:#84948d">
                 Brak itemów.
-            </p>`;
+            </p>
+        `;
 
         return;
     }
 
+
     let html = "";
 
-    inventory.forEach(item => {
 
-        html += `
-            <div class="inventory-item">
+    inventory.forEach(
+        function (item) {
 
-                <div>
-                    ${safeText(item.icon)}
-                    ${safeText(item.name)}
+            html += `
+                <div class="inventory-item">
 
-                    <br>
+                    <div>
+                        ${safeText(item.icon)}
+                        ${safeText(item.name)}
 
-                    <small>
-                        ${item.value} 🟡
-                    </small>
+                        <br>
+
+                        <small>
+                            ${item.value} 🟡
+                        </small>
+                    </div>
+
+                    <button
+                        onclick="betItem('${item.id}')"
+                    >
+                        POSTAW
+                    </button>
+
                 </div>
+            `;
+        }
+    );
 
-                <button
-                    onclick="betItem('${item.id}')"
-                >
-                    POSTAW
-                </button>
-
-            </div>
-        `;
-    });
 
     inventoryBox.innerHTML = html;
 }
@@ -963,25 +1230,30 @@ function renderPot() {
         return;
     }
 
+
     let html = "";
 
-    pot.forEach(bet => {
 
-        html += `
-            <div class="bet-item">
+    pot.forEach(
+        function (bet) {
 
-                <div>
-                    ${safeText(bet.icon)}
-                    ${safeText(bet.name)}
+            html += `
+                <div class="bet-item">
+
+                    <div>
+                        ${safeText(bet.icon)}
+                        ${safeText(bet.name)}
+                    </div>
+
+                    <div class="bet-owner">
+                        ${safeText(bet.owner)}
+                    </div>
+
                 </div>
+            `;
+        }
+    );
 
-                <div class="bet-owner">
-                    ${safeText(bet.owner)}
-                </div>
-
-            </div>
-        `;
-    });
 
     potBox.innerHTML = html;
 }
@@ -993,7 +1265,7 @@ function renderPot() {
 
 copyRoomBtn.addEventListener(
     "click",
-    async () => {
+    async function () {
 
         try {
 
@@ -1001,16 +1273,17 @@ copyRoomBtn.addEventListener(
                 roomCode
             );
 
+
             setStatus(
                 "Kod pokoju skopiowany: " +
                 roomCode
             );
         }
 
-        catch {
+        catch (error) {
 
             prompt(
-                "Skopiuj kod:",
+                "Skopiuj kod pokoju:",
                 roomCode
             );
         }
@@ -1019,22 +1292,7 @@ copyRoomBtn.addEventListener(
 
 
 // ==========================================
-// ID ITEMÓW
-// ==========================================
-
-function makeID() {
-
-    return (
-        Date.now().toString(36) +
-        Math.random()
-            .toString(36)
-            .substring(2, 8)
-    );
-}
-
-
-// ==========================================
-// STARTOWE RENDEROWANIE
+// START
 // ==========================================
 
 renderBalance();
