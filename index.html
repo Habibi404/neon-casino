@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Neon Casino</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- PeerJS - połączenie graczy przez internet -->
+    <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+</head>
+
+<body>
+
+<div id="app">
+
+    <!-- EKRAN STARTOWY -->
+    <section id="start-screen" class="screen">
+
+        <div class="logo">
+            ♠ NEON CASINO
+        </div>
+
+        <div class="start-box">
+
+            <h1>Prywatne kasyno ze znajomymi</h1>
+
+            <p class="subtitle">
+                Wpisz nick. Nie musisz zakładać konta.
+            </p>
+
+            <input
+                id="nickname"
+                type="text"
+                maxlength="20"
+                placeholder="Twój nick"
+                autocomplete="off"
+            >
+
+            <button id="continue-btn">
+                DALEJ
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- LOBBY -->
+    <section id="lobby-screen" class="screen hidden">
+
+        <header>
+
+            <div class="logo">
+                ♠ NEON CASINO
+            </div>
+
+            <div>
+                Gracz:
+                <strong id="lobby-nickname"></strong>
+            </div>
+
+        </header>
+
+
+        <div class="lobby-container">
+
+            <div class="panel">
+
+                <h2>🎲 Utwórz pokój</h2>
+
+                <p>
+                    Utwórz prywatny stół i wyślij kod znajomemu.
+                </p>
+
+                <button id="create-room-btn">
+                    UTWÓRZ POKÓJ
+                </button>
+
+            </div>
+
+
+            <div class="or">
+                LUB
+            </div>
+
+
+            <div class="panel">
+
+                <h2>🔗 Dołącz do pokoju</h2>
+
+                <input
+                    id="room-code-input"
+                    type="text"
+                    placeholder="Kod pokoju"
+                    maxlength="20"
+                    autocomplete="off"
+                >
+
+                <button id="join-room-btn">
+                    DOŁĄCZ
+                </button>
+
+            </div>
+
+        </div>
+
+        <p id="lobby-status" class="status"></p>
+
+    </section>
+
+
+    <!-- STÓŁ -->
+    <section id="game-screen" class="screen hidden">
+
+        <header>
+
+            <div class="logo">
+                ♠ NEON CASINO
+            </div>
+
+            <div class="room-info">
+
+                Pokój:
+                <strong id="room-code-display"></strong>
+
+                <button id="copy-room-btn" class="small-button">
+                    KOPIUJ KOD
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <main class="game-layout">
+
+            <!-- LEWY PANEL -->
+            <aside class="side-panel">
+
+                <h2>👥 Gracze</h2>
+
+                <div id="players-list"></div>
+
+                <hr>
+
+                <h2>🎒 Twój ekwipunek</h2>
+
+                <div id="inventory"></div>
+
+            </aside>
+
+
+            <!-- STÓŁ -->
+            <section class="casino-area">
+
+                <div class="casino-table">
+
+                    <div class="table-logo">
+                        ♠ ♦ ♣ ♥
+                    </div>
+
+
+                    <div class="pot-area">
+
+                        <div class="pot-title">
+                            WSPÓLNA PULA
+                        </div>
+
+                        <div id="pot">
+
+                            <span class="empty-pot">
+                                Tutaj pojawią się postawione przedmioty
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="betting-area">
+
+                        <div class="bet-label">
+                            POSTAW ŻETONY
+                        </div>
+
+                        <div class="chips">
+
+                            <button class="chip" data-value="10">
+                                10
+                            </button>
+
+                            <button class="chip" data-value="50">
+                                50
+                            </button>
+
+                            <button class="chip" data-value="100">
+                                100
+                            </button>
+
+                            <button class="chip" data-value="500">
+                                500
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="game-buttons">
+
+                    <button id="undo-bet-btn" class="dark-button">
+                        COFNIJ MOJĄ STAWKĘ
+                    </button>
+
+                </div>
+
+
+                <p id="game-status" class="status"></p>
+
+            </section>
+
+
+            <!-- SHOP -->
+            <aside class="side-panel">
+
+                <h2>🛒 ITEM SHOP</h2>
+
+                <p class="balance">
+                    🟡
+                    <strong id="balance">10000</strong>
+                </p>
+
+
+                <div class="shop-item">
+
+                    <div class="shop-icon">
+                        🔑
+                    </div>
+
+                    <strong>
+                        Kluczyki
+                    </strong>
+
+                    <span>
+                        500 🟡
+                    </span>
+
+                    <button
+                        class="buy-item"
+                        data-name="Kluczyki"
+                        data-icon="🔑"
+                        data-price="500"
+                    >
+                        KUP
+                    </button>
+
+                </div>
+
+
+                <div class="shop-item">
+
+                    <div class="shop-icon">
+                        ⌚
+                    </div>
+
+                    <strong>
+                        Zegarek
+                    </strong>
+
+                    <span>
+                        1000 🟡
+                    </span>
+
+                    <button
+                        class="buy-item"
+                        data-name="Zegarek"
+                        data-icon="⌚"
+                        data-price="1000"
+                    >
+                        KUP
+                    </button>
+
+                </div>
+
+
+                <div class="shop-item">
+
+                    <div class="shop-icon">
+                        💎
+                    </div>
+
+                    <strong>
+                        Diament
+                    </strong>
+
+                    <span>
+                        2500 🟡
+                    </span>
+
+                    <button
+                        class="buy-item"
+                        data-name="Diament"
+                        data-icon="💎"
+                        data-price="2500"
+                    >
+                        KUP
+                    </button>
+
+                </div>
+
+
+                <div class="shop-item">
+
+                    <div class="shop-icon">
+                        🏎️
+                    </div>
+
+                    <strong>
+                        Samochód
+                    </strong>
+
+                    <span>
+                        5000 🟡
+                    </span>
+
+                    <button
+                        class="buy-item"
+                        data-name="Samochód"
+                        data-icon="🏎️"
+                        data-price="5000"
+                    >
+                        KUP
+                    </button>
+
+                </div>
+
+
+                <hr>
+
+
+                <button id="create-item-btn" class="dark-button">
+                    + WŁASNY ITEM
+                </button>
+
+            </aside>
+
+        </main>
+
+    </section>
+
+</div>
+
+
+<!--
+    WAŻNE:
+    Wszystkie przedmioty oraz żetony w tej grze są
+    elementami wirtualnymi i nie reprezentują
+    prawdziwych pieniędzy ani własności.
+-->
+
+<script src="app.js"></script>
+
+</body>
+</html>
